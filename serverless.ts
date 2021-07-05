@@ -3,6 +3,7 @@ import type { AWS } from '@serverless/typescript'
 import checkForNewCoins from '@functions/scheduled-job'
 import coinApi from '@functions/coin-api'
 
+/* eslint-disable no-template-curly-in-string */
 const serverlessConfiguration: AWS = {
   service: 'coinbase-new-coin-alert',
   frameworkVersion: '2',
