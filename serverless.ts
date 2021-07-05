@@ -11,9 +11,11 @@ const serverlessConfiguration: AWS = {
     webpack: {
       webpackConfig: './webpack.config.js',
       includeModules: true
-    }
+    },
+    snsTopic: '${self:service}-${self:provider.stage}-alert',
+    snsTopicArn: 'arn:aws:sns:us-east-1:#{AWS::AccountId}:${self:custom.snsTopic}'
   },
-  plugins: ['serverless-webpack', 'serverless-offline'],
+  plugins: ['serverless-webpack', 'serverless-offline', 'serverless-pseudo-parameters'],
   provider: {
     name: 'aws',
     runtime: 'nodejs14.x',
@@ -22,12 +24,41 @@ const serverlessConfiguration: AWS = {
       shouldStartNameWithService: true
     },
     environment: {
-      AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1'
+      AWS_NODEJS_CONNECTION_REUSE_ENABLED: '1',
+      SNS_TOPIC_ARN: '${self:custom.snsTopicArn}'
     },
-    lambdaHashingVersion: '20201221'
+    lambdaHashingVersion: '20201221',
+    iamRoleStatements:
+      [{
+        Effect: 'Allow',
+        Resource: '${self:custom.snsTopicArn}',
+        Action: ['sns:*']
+      }]
   },
   // import the function via paths
-  functions: { checkForNewCoins, coinApi }
+  functions: { checkForNewCoins, coinApi },
+  resources:
+  {
+    Resources: {
+      NewCoinAlertSNSTopic:
+        {
+          Type: 'AWS::SNS::Topic',
+          Properties: {
+            DisplayName: 'New Coin Alert SNS Topic',
+            TopicName: '${self:custom.snsTopic}'
+          }
+        },
+      NewCoinAlertPhoneSNSSubscription:
+        {
+          Type: 'AWS::SNS::Subscription',
+          Properties: {
+            Endpoint: '${opt:sms}',
+            Protocol: 'sms',
+            TopicArn: { Ref: 'NewCoinAlertSNSTopic' }
+          }
+        }
+    }
+  }
 }
 
 module.exports = serverlessConfiguration
