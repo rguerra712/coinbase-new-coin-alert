@@ -18,5 +18,6 @@ export const checkForNewCoins = async (alertNewCoinsExist): Promise<void> => {
     newCoins.forEach(coin => {
       alertNewCoinsExist(coin)
     })
+    latestCoins = coins
   }
 }
